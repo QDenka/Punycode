@@ -15,7 +15,8 @@
     ],
     "require": {
         "php": ">=7.4",
-        "ext-intl": "*"
+        "ext-intl": "*",
+        "ext-mbstring": "*"
     },
     "require-dev": {
         "phpunit/phpunit": ">=8.5"

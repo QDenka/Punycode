@@ -14,7 +14,7 @@ You can install the library via Composer. Run the following command:
 composer require qdenka/punycode
 ```
 
-## Usage
+## Usage Punycode Converter
 
 ```php
 use Qdenka\Punycode\Converter;
@@ -32,4 +32,16 @@ $encodedUrls = Converter::encodeFromArray($urls);
 // Decode an array of Punycode URLs back to their original forms
 $punycodeUrls = ['xn--tda.com', 'http://www.example.com/url1'];
 $decodedUrls = Converter::decodeFromArray($punycodeUrls);
+```
+
+## Usage Punycode Identifier
+
+```php
+use Qdenka\Punycode\Identifier;
+
+// Check if a URL is encoded in Punycode
+$isPunycode = Identifier::isPunycode('http://xn--tda.com/');
+
+// Check if a URL is Unicode
+$isNotPunycode = Identifier::isUnicode('http://www.üñïçø.com/');
 ```
