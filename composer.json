@@ -1,0 +1,17 @@
+{
+    "name": "qdenka/punycode",
+    "description": "A simple PHP library for encoding and decoding URLs to and from Punycode.",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Qdenka\\Punycode\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "QDenka",
+            "email": "a@bigf.at"
+        }
+    ],
+    "require": {}
+}
