@@ -4,6 +4,7 @@ namespace Qdenka\Punycode;
 
 use Qdenka\Punycode\Contracts\ConverterContract;
 use Qdenka\Punycode\Services\PunycodeConverter;
+use Qdenka\Punycode\ValueObjects\Uri;
 
 class Converter implements ConverterContract
 {
@@ -18,6 +19,8 @@ class Converter implements ConverterContract
      */
     public static function encode(string $url): string
     {
+        $url = new Uri($url);
+
         return self::getConverter()->encode($url);
     }
 
@@ -30,6 +33,8 @@ class Converter implements ConverterContract
      */
     public static function decode(string $url): string
     {
+        $url = new Uri($url);
+        
         return self::getConverter()->decode($url);
     }
 

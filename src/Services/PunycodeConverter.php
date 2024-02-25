@@ -5,23 +5,16 @@ namespace Qdenka\Punycode\Services;
 use Exception;
 use Qdenka\Punycode\Contracts\PunycodeDecoderContract;
 use Qdenka\Punycode\Contracts\PunycodeEncoderContract;
-use Qdenka\Punycode\Exceptions\InvalidUrlException;
 use Qdenka\Punycode\Exceptions\ModuleNotFoundException;
-use Spoofchecker;
+use Qdenka\Punycode\ValueObjects\Uri;
 
 /**
  * Class UrlPunycodeConverter
  *
  * This class is responsible for encoding and decoding URLs to and from Punycode.
  */
-class PunycodeConverter implements PunycodeEncoderContract, PunycodeDecoderContract
+final class PunycodeConverter implements PunycodeEncoderContract, PunycodeDecoderContract
 {
-    /**
-     * @var Spoofchecker
-     */
-    private Spoofchecker $spoofChecker;
-
-
     /**
      * UrlPunycodeConverter constructor.
      *
@@ -32,80 +25,74 @@ class PunycodeConverter implements PunycodeEncoderContract, PunycodeDecoderContr
         if (!extension_loaded('intl')) {
             throw new ModuleNotFoundException('The intl extension is not loaded. Please ensure it is installed and enabled.');
         }
-        $this->spoofChecker = new Spoofchecker();
     }
 
     /**
      * Encode the URL into Punycode.
      *
-     * @param string $url
+     * @param Uri $uri
      * @return string
-     * @throws Exception
      */
-    public function encode(string $url): string
+    public function encode(Uri $uri): string
     {
-        $parsedUrl = $this->parseUrl($url);
-        $this->checkUrl($parsedUrl);
-        $parsedUrl = parse_url($url);
+        $uri = $this->encodeParsedUri($uri);
 
-        $parsedUrl['host'] = idn_to_ascii($parsedUrl['host'], IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
-        return $this->unparseUrl($parsedUrl);
+        return $uri->getUri();
     }
 
     /**
      * Decode the Punycode URL back to its original form.
      *
-     * @param string $url
+     * @param Uri $uri
      * @return string
-     * @throws Exception
      */
-    public function decode(string $url): string
+    public function decode(Uri $uri): string
     {
-        $parsedUrl = $this->parseUrl($url);
-        $this->checkUrl($parsedUrl);
+        $uri = $this->decodeParsedUri($uri);
 
-        $parsedUrl['host'] = idn_to_utf8($parsedUrl['host'], IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
-        return $this->unparseUrl($parsedUrl);
+        return $uri->getUri();
     }
 
     /**
-     * @param array $parsedUrl
-     * @return void
-     * @throws InvalidUrlException
+     * @param Uri $parsedUrl
+     * @return Uri
      */
-    private function checkUrl(array $parsedUrl): void
+    private function encodeParsedUri(Uri $parsedUrl): Uri
     {
-        if (!isset($parsedUrl['host']) || $this->spoofChecker->isSuspicious($parsedUrl['host'])) {
-            throw new InvalidUrlException('Invalid URL provided: ' . $this->unparseUrl($parsedUrl));
+        $parsedUrl->setHost(idn_to_ascii($parsedUrl->getHost()));
+        $parsedUrl->setPath($this->urlencode($parsedUrl->getPath()));
+        $parsedUrl->setQuery($this->urlencode($parsedUrl->getQuery()));
+        $parsedUrl->setFragment($this->urlencode($parsedUrl->getFragment()));
+
+        return $parsedUrl;
+    }
+
+    /**
+     * @param Uri $parsedUrl
+     * @return Uri
+     */
+    private function decodeParsedUri(Uri $parsedUrl): Uri
+    {
+        $parsedUrl->setHost(idn_to_utf8($parsedUrl->getHost()));
+        $parsedUrl->setPath(urldecode($parsedUrl->getPath()));
+        $parsedUrl->setQuery(urldecode($parsedUrl->getQuery()));
+        $parsedUrl->setFragment(urldecode($parsedUrl->getFragment()));
+
+        return $parsedUrl;
+    }
+
+    /**
+     * @param string|null $uri
+     * @return string
+     */
+    private function urlencode(?string $uri): string
+    {
+        if ($uri === null) {
+            return '';
         }
-    }
 
-    /**
-     * @param string $url
-     * @return array
-     */
-    private function parseUrl(string $url): array
-    {
-        return parse_url($url);
-    }
+        $uri = urlencode($uri);
 
-    /**
-     * Build the URL back from its parsed components.
-     *
-     * @param array $parsedUrl
-     * @return string
-     */
-    private function unparseUrl(array $parsedUrl): string
-    {
-        $scheme = isset($parsedUrl['scheme']) ? $parsedUrl['scheme'] . '://' : '';
-        $user = $parsedUrl['user'] ?? '';
-        $pass = isset($parsedUrl['pass']) ? ':' . $parsedUrl['pass'] : '';
-        $pass = ($user || $pass) ? "$pass@" : '';
-        $host = $parsedUrl['host'] ?? '';
-        $port = isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '';
-        $path = $parsedUrl['path'] ?? '';
-        $query = isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '';
-        $fragment = isset($parsedUrl['fragment']) ? '#' . $parsedUrl['fragment'] : '';
-        return "$scheme$user$pass$host$port$path$query$fragment";
+        return str_replace(['%2F', '%3F', '%23', '%26', '%3D'], ['/', '?', '#', '&', '='], $uri);
     }
 }
