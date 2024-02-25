@@ -31,9 +31,9 @@ class ConverterTest extends TestCase
 
     public function testEncodeFromArray(): void
     {
-        $urls = ['https://點看.com', 'https://домен.рф/testcase', 'сдай-лом.рф/пример'];
+        $urls = ['https://點看.com', 'https://домен.рф/testcase', 'сдай-лом.рф/пример', 'test.com/test', 'http://test2.com/test?uri=true'];
         $encodedUrls = Converter::encodeFromArray($urls);
-        $this->assertEquals(['https://xn--c1yn36f.com', 'https://xn--d1acufc.xn--p1ai/testcase', 'xn----7sblvlgns.xn--p1ai/%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80'], $encodedUrls);
+        $this->assertEquals(['https://xn--c1yn36f.com', 'https://xn--d1acufc.xn--p1ai/testcase', 'xn----7sblvlgns.xn--p1ai/%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80', 'test.com/test', 'http://test2.com/test?uri=true'], $encodedUrls);
     }
 
     public function testFullUrlEncode(): void

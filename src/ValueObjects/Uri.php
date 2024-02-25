@@ -27,17 +27,17 @@ final class Uri
     /**
      * @return string
      */
-    public function getHost(): ?string
+    public function getHost(): string
     {
-        return $this->uri['host'];
+        return $this->uri['host'] ?? '';
     }
 
     /**
      * @return string
      */
-    public function getScheme(): ?string
+    public function getScheme(): string
     {
-        return $this->uri['scheme'];
+        return $this->uri['scheme'] ?? '';
     }
 
     /**
