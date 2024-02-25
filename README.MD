@@ -20,7 +20,7 @@ composer require qdenka/punycode
 use Qdenka\Punycode\Converter;
 
 // Encode a URL to Punycode
-$encodedUrl = Converter::encode('http://www.üñïçø∂é.com/');
+$encodedUrl = Converter::encode('http://www.üñïçø∂é.com/привет#мир');
 
 // Decode a Punycode URL back to its original form
 $decodedUrl = Converter::decode('http://xn--tda.com/');
@@ -39,9 +39,9 @@ $decodedUrls = Converter::decodeFromArray($punycodeUrls);
 ```php
 use Qdenka\Punycode\Identifier;
 
-// Check if a URL is encoded in Punycode
+// Check if a URL is encoded IDN
 $isPunycode = Identifier::isPunycode('http://xn--tda.com/');
 
-// Check if a URL is Unicode
+// Check if a URL is Ascii
 $isNotPunycode = Identifier::isUnicode('http://www.üñïçø.com/');
 ```
