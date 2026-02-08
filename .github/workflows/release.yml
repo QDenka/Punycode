@@ -26,7 +26,7 @@ jobs:
           extensions: intl, mbstring
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
+        run: composer update --prefer-dist --no-progress --no-interaction
 
       - name: Run tests
         run: vendor/bin/phpunit --colors=always
