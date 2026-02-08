@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  tests:
+    name: "Tests (PHP ${{ matrix.php }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        include:
+          - php: '8.2'
+            coverage: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: intl, mbstring
+          coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-php-${{ matrix.php }}-composer-${{ hashFiles('composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php }}-composer-
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress --no-interaction
+
+      - name: Run tests
+        if: ${{ !matrix.coverage }}
+        run: vendor/bin/phpunit --colors=always
+
+      - name: Run tests with coverage
+        if: ${{ matrix.coverage }}
+        run: vendor/bin/phpunit --colors=always --coverage-filter src --coverage-clover=coverage.xml --coverage-text
+
+      - name: Upload coverage to Codecov
+        if: ${{ matrix.coverage }}
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  code-style:
+    name: Code Style
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: intl, mbstring
+          tools: php-cs-fixer
+
+      - name: Check code style
+        run: php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.php || true
+
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: intl, mbstring
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress --no-interaction
+
+      - name: Install PHPStan
+        run: composer require --dev phpstan/phpstan --no-interaction
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse src --level=5 --no-progress
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-progress --no-interaction
+
+      - name: Security audit
+        run: composer audit
