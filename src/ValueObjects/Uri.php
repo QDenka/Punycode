@@ -13,14 +13,21 @@ final class Uri
      */
     public function __construct(string $url)
     {
-        $this->uri = parse_url($url);
-        if ($this->uri === false) {
-            throw new InvalidUrlException('Invalid URL');
+        $parsed = parse_url($url);
+        if ($parsed === false) {
+            throw new InvalidUrlException('Invalid URL: unable to parse.');
         }
 
+        $this->uri = $parsed;
+
         if (!isset($this->uri['host'])) {
-            $this->uri['host'] = explode('/', $this->uri['path'])[0];
-            $this->uri['path'] = str_replace($this->uri['host'], '', $this->uri['path']);
+            $pathParts = explode('/', $this->uri['path'] ?? '');
+            $this->uri['host'] = $pathParts[0];
+            $this->uri['path'] = substr($this->uri['path'] ?? '', strlen($this->uri['host']));
+        }
+
+        if (!UriValidator::validate($this->uri)) {
+            throw new InvalidUrlException('Invalid URL: host is missing.');
         }
     }
 
@@ -59,7 +66,7 @@ final class Uri
     /**
      * @return string
      */
-    public function getFragment(): ?string
+    public function getFragment(): string
     {
         return $this->uri['fragment'] ?? '';
     }
@@ -67,7 +74,7 @@ final class Uri
     /**
      * @return string
      */
-    public function getUser(): ?string
+    public function getUser(): string
     {
         return $this->uri['user'] ?? '';
     }
@@ -75,7 +82,7 @@ final class Uri
     /**
      * @return string
      */
-    public function getPass(): ?string
+    public function getPass(): string
     {
         return $this->uri['pass'] ?? '';
     }
@@ -85,7 +92,7 @@ final class Uri
      */
     public function getPort(): string
     {
-        return $this->uri['port'] ?? '';
+        return isset($this->uri['port']) ? (string) $this->uri['port'] : '';
     }
 
     /**
@@ -93,12 +100,18 @@ final class Uri
      */
     public function getAuthority(): string
     {
-        $user = $this->getUser();
-        $pass = $this->getPass();
-        $pass = ($user || $pass) ? "$pass@" : '';
-        $port = $this->getPort();
+        $userInfo = '';
+        if ($this->getUser()) {
+            $userInfo = $this->getUser();
+            if ($this->getPass()) {
+                $userInfo .= ':' . $this->getPass();
+            }
+            $userInfo .= '@';
+        }
 
-        return $user . $pass . $this->getHost() . $port;
+        $port = $this->getPort() ? ':' . $this->getPort() : '';
+
+        return $userInfo . $this->getHost() . $port;
     }
 
     /**
@@ -111,6 +124,7 @@ final class Uri
         $path = $this->getPath();
         $query = $this->getQuery() ? '?' . $this->getQuery() : '';
         $fragment = $this->getFragment() ? '#' . $this->getFragment() : '';
+
         return "$scheme$host$path$query$fragment";
     }
 

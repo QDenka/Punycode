@@ -2,23 +2,23 @@
 
 namespace Qdenka\Punycode\Services;
 
-use Exception;
 use Qdenka\Punycode\Contracts\PunycodeDecoderContract;
 use Qdenka\Punycode\Contracts\PunycodeEncoderContract;
 use Qdenka\Punycode\Exceptions\ModuleNotFoundException;
 use Qdenka\Punycode\ValueObjects\Uri;
+use RuntimeException;
 
 /**
- * Class UrlPunycodeConverter
+ * Class PunycodeConverter
  *
  * This class is responsible for encoding and decoding URLs to and from Punycode.
  */
 final class PunycodeConverter implements PunycodeEncoderContract, PunycodeDecoderContract
 {
     /**
-     * UrlPunycodeConverter constructor.
+     * PunycodeConverter constructor.
      *
-     * @throws Exception
+     * @throws ModuleNotFoundException
      */
     public function __construct()
     {
@@ -56,10 +56,19 @@ final class PunycodeConverter implements PunycodeEncoderContract, PunycodeDecode
     /**
      * @param Uri $parsedUrl
      * @return Uri
+     * @throws RuntimeException
      */
     private function encodeParsedUri(Uri $parsedUrl): Uri
     {
-        $parsedUrl->setHost(idn_to_ascii($parsedUrl->getHost()));
+        $host = $parsedUrl->getHost();
+        if ($host !== '') {
+            $encoded = idn_to_ascii($host);
+            if ($encoded === false) {
+                throw new RuntimeException("Failed to encode host to Punycode: '{$host}'");
+            }
+            $parsedUrl->setHost($encoded);
+        }
+
         $parsedUrl->setPath($this->urlencode($parsedUrl->getPath()));
         $parsedUrl->setQuery($this->urlencode($parsedUrl->getQuery()));
         $parsedUrl->setFragment($this->urlencode($parsedUrl->getFragment()));
@@ -70,10 +79,19 @@ final class PunycodeConverter implements PunycodeEncoderContract, PunycodeDecode
     /**
      * @param Uri $parsedUrl
      * @return Uri
+     * @throws RuntimeException
      */
     private function decodeParsedUri(Uri $parsedUrl): Uri
     {
-        $parsedUrl->setHost(idn_to_utf8($parsedUrl->getHost()));
+        $host = $parsedUrl->getHost();
+        if ($host !== '') {
+            $decoded = idn_to_utf8($host);
+            if ($decoded === false) {
+                throw new RuntimeException("Failed to decode Punycode host: '{$host}'");
+            }
+            $parsedUrl->setHost($decoded);
+        }
+
         $parsedUrl->setPath(urldecode($parsedUrl->getPath()));
         $parsedUrl->setQuery(urldecode($parsedUrl->getQuery()));
         $parsedUrl->setFragment(urldecode($parsedUrl->getFragment()));
@@ -87,7 +105,7 @@ final class PunycodeConverter implements PunycodeEncoderContract, PunycodeDecode
      */
     private function urlencode(?string $uri): string
     {
-        if ($uri === null) {
+        if ($uri === null || $uri === '') {
             return '';
         }
 

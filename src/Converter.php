@@ -8,7 +8,7 @@ use Qdenka\Punycode\ValueObjects\Uri;
 
 class Converter implements ConverterContract
 {
-    static PunycodeConverter $converter;
+    private static ?PunycodeConverter $converter = null;
 
     /**
      * Encode the URL to Punycode.
@@ -34,7 +34,7 @@ class Converter implements ConverterContract
     public static function decode(string $url): string
     {
         $url = new Uri($url);
-        
+
         return self::getConverter()->decode($url);
     }
 
@@ -73,7 +73,7 @@ class Converter implements ConverterContract
      */
     private static function getConverter(): PunycodeConverter
     {
-        if (!isset(self::$converter)) {
+        if (self::$converter === null) {
             self::$converter = new PunycodeConverter();
         }
 
