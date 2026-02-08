@@ -50,7 +50,7 @@ jobs:
 
       - name: Run tests with coverage
         if: ${{ matrix.coverage }}
-        run: vendor/bin/phpunit --colors=always --coverage-clover=coverage.xml --coverage-text
+        run: vendor/bin/phpunit --colors=always --coverage-filter src --coverage-clover=coverage.xml --coverage-text
 
       - name: Upload coverage to Codecov
         if: ${{ matrix.coverage }}
